@@ -1,24 +1,20 @@
-import { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import FilterPrice from '../components/FilterPrice'
 import CardWine from '../components/CardWine'
 import GridStore from '../styles/GridStore'
 import { GetStaticProps } from 'next'
-import ReactPaginate from 'react-paginate'
+import { Pagination } from '@material-ui/lab'
+import Stack from '@mui/material/Stack';
 import Button from '../components/Button'
 
 export interface wineProps {
   id: number,
 }
 
-export interface IProps {
-  onPageChange?: () => any;
-}
-
 export const getStaticProps: GetStaticProps = async (context) => {
   try {
     const page = 1
-    const limit = 500
-
+    const limit = 10
     const res = await fetch(`https://wine-back-test.herokuapp.com/products?page=${page}&limit=${limit}`)
     const data = await res.json()
 
@@ -33,26 +29,24 @@ export const getStaticProps: GetStaticProps = async (context) => {
 }
 
 export default function Home({ wines }) {
-  const [currentItems, setCurrentItems] = useState(wines.items)
-  const [pageCount, setPageCount] = useState(0)
+  const [pagenate, setPagenate] = useState(1)
+  const [store, setStore] = useState([])
+  console.log('estou aqui 2')
+  
+  useEffect(() => {
+    const getWines = async () => {
+      const page = pagenate
+      const limit = 10
+      const res = await fetch(`https://wine-back-test.herokuapp.com/products?page=${page}&limit=${limit}`)
+      const data = await res.json()
+      setStore(data.items)
+    }
+    getWines()
+  }, [pagenate])
 
-  const itemsPerPage = 10
-  const pagesVisited = pageCount * itemsPerPage
-
-  const displayItems = currentItems
-    .slice(pagesVisited, pagesVisited + itemsPerPage)
-    .map(wine => {
-      return (
-        <div className='card'>
-          <CardWine key={wine.id} wine={wine} />
-          <Button />
-        </div>
-      )
-    })
-
-  // const changePage = ({selected}) = {
-  //   setCurrentItems(selected)
-  // }
+  const changePage = (event: React.ChangeEvent<unknown>, value: number) => {
+    setPagenate(value)
+  }
 
   return (
     <GridStore>
@@ -61,16 +55,25 @@ export default function Home({ wines }) {
         <div>
           <p>oi</p>
           <div className="card_container">
-            {displayItems}
+            {store?.map((wine) => {
+              return (
+                <div className='card'>
+                  <CardWine key={wine.id} wine={wine} />
+                  <Button />
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
-      <ReactPaginate
-        previousLabel="< Anterior"
-        nextLabel="Próximo >"
-        pageCount={3}
-      // onPageChange={changePage}
-      />
+      <Stack spacing={2}>
+        <Pagination 
+          count={wines.totalPages}
+          defaultPage={wines.page}
+          siblingCount={3}
+          onChange={changePage}
+        />
+      </Stack>
     </GridStore>
   )
 }
